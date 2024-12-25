@@ -1,0 +1,110 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
+.main {
+  background-color: #18181b;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+}
+
+label {
+  font-size: 14px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 5.5px;
+  font-size: 12px;
+  width: 28vw;
+  padding: 22px;
+  align-items: stretch;
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.btn2 {
+  display: flex;
+  justify-content: center;
+  gap: 11px;
+}
+
+.btn2 img {
+  align-self: self-start;
+}
+
+.div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 14px;
+}
+
+input {
+  padding: 12px;
+  border-radius: 10px;
+  outline: none;
+  border: 1px solid #636364;
+  background-color: transparent;
+  color: #636364;
+  font-size: 12px;
+}
+
+button {
+  padding: 10px;
+  color: white;
+  background-color: #1a5fff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+button:nth-of-type(2) {
+    margin-bottom: 10px;
+}
+
+p {
+  align-self: center;
+  margin: 5px;
+  font-size: 14px;
+}
+
+a {
+  color: #1a5fff;
+}
+
+.img1 {
+  position: absolute;
+  left: 9vw;
+  top: 33vh;
+}
+
+.img2 {
+  position: absolute;
+  bottom: 0px;
+  right: 29vw;
+}
+
+.img3 {
+  position: absolute;
+  right: 0;
+  top: 20vh;
+}
+
+.error {
+  color: red;
+  font-size: 13px;
+}
+
+.errorLabel {
+  color: red;
+}
+
+.errorInput {
+  border-color: red;
+}
