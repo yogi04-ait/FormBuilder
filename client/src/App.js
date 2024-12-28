@@ -5,6 +5,7 @@ import Landing from './Components/Landing';
 import Login from './Components/Login';
 import Signup from './Components/Signup';
 import NotFound from './Components/NotFound';
+import Form from "./Components/Form";
 
 
 function App() {
@@ -20,6 +21,10 @@ function App() {
     {
       path: "/register",
       element: <Signup />,
+    },
+    {
+      path: "/test",
+      element: <Form />
     },
     {
       path: "*", // This handles all unmatched routes

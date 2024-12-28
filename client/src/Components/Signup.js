@@ -5,12 +5,13 @@ import img from "../Assets/img.png";
 import elipse1 from '../Assets/Ellipse1.png';
 import elipse2 from "../Assets/Ellipse2.png";
 import googleLogo from "../Assets/google.png";
+const apiUrl = process.env.REACT_APP_URL;
 
 const Signup = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmpassword, setConfirmPassword] = useState('');
     const [errors, setErrors] = useState({});
 
     const validateEmail = (email) => {
@@ -23,7 +24,7 @@ const Signup = () => {
         return passwordRegex.test(password);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const newErrors = {};
 
@@ -43,16 +44,35 @@ const Signup = () => {
             newErrors.password = 'Password must be 8+ characters long and include at least one special character';
         }
 
-        if (password !== confirmPassword) {
-            newErrors.confirmPassword = 'enter same password in both fields';
+        if (password !== confirmpassword) {
+            newErrors.confirmpassword = 'enter same password in both fields';
         }
 
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
-            console.log('Username:', username);
-            console.log('Email:', email);
-            console.log('Password:', password);
+            try {
+                const response = await fetch(`${apiUrl}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username, email, password, confirmpassword }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    console.log('User registered successful:', data);
+                } else {
+                    console.error('Error logging in:', data);
+                    setErrors({ server: data.message || 'An error occurred' });
+                }
+
+            } catch (error) {
+                console.error('Error connecting to the server:', error);
+                setErrors({ server: 'Unable to connect to the server. Please try again later.' });
+            }
         }
     };
 
@@ -101,12 +121,13 @@ const Signup = () => {
                         type='password'
                         id='confirm-password'
                         placeholder='Confirm your password'
-                        value={confirmPassword}
+                        value={confirmpassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
                         className={errors.confirmPassword ? style.errorInput : ''}
                     />
                     {errors.confirmPassword && <span className={style.error}>{errors.confirmPassword}</span>}
                 </div>
+                {errors.server && <span className={style.error}>{errors.server}</span>}
                 <button type='submit'>Sign Up</button>
                 <p>OR</p>
                 <button type='button' className={style.btn2}>

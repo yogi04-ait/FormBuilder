@@ -5,6 +5,8 @@ import img from "../Assets/img.png";
 import elipse1 from '../Assets/Ellipse1.png';
 import elipse2 from "../Assets/Ellipse2.png";
 import googleLogo from "../Assets/google.png";
+const apiUrl = process.env.REACT_APP_URL;
+
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -21,10 +23,9 @@ const Login = () => {
         return passwordRegex.test(password);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const newErrors = {};
-
         if (!email.trim()) {
             newErrors.email = 'Email is required';
         } else if (!validateEmail(email)) {
@@ -40,10 +41,30 @@ const Login = () => {
         setErrors(newErrors);
 
         if (Object.keys(newErrors).length === 0) {
-            console.log('Email:', email);
-            console.log('Password:', password);
+            try {
+                const response = await fetch(`${apiUrl}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email, password }),
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    console.log('Login successful:', data);
+                } else {
+                    console.error('Error logging in:', data);
+                    setErrors({ server: data.message || 'An error occurred' });
+                }
+            } catch (error) {
+                console.error('Error connecting to the server:', error);
+                setErrors({ server: 'Unable to connect to the server. Please try again later.' });
+            }
         }
     };
+
 
     return (
         <div className={style.main}>
@@ -72,6 +93,7 @@ const Login = () => {
                     />
                     {errors.password && <span className={style.error}>{errors.password}</span>}
                 </div>
+                {errors.server && <span className={style.error}>{errors.server}</span>}
                 <button type='submit'>Log In</button>
                 <p>OR</p>
                 <button type='button' className={style.btn2}>
