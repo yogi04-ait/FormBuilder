@@ -57,7 +57,6 @@ const Settings = () => {
                 </div>
                 <button type="submit">Update</button>
             </form>
-            <a href="#">Log out</a>
         </div>
     );
 };

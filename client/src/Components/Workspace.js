@@ -26,7 +26,6 @@ const Workspace = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [iseditable, setIsEditaable] = useState(true);
     const [isdrop, setIsDrop] = useState(false);
-    const [currentEnviro, setCurrentEnviro] = useState("");
     const [currentdir, setCurrentDir] = useState("");
     const [deleteFolderId, setDeleteFolderID] = useState('');
     const [folderstruct, setfolderstruct] = useState(1);
@@ -84,7 +83,6 @@ const Workspace = () => {
     };
 
     const handleEmailInvite = () => {
-        console.log("Invite sent to:", email);
         setEmail("");
         alert(`Invitation sent to ${email}`);
     };
@@ -208,7 +206,7 @@ const Workspace = () => {
     //         console.error("Error deleting folder:", error);
     //     }
     // };
-    
+
     const deleteFolder = async (folderId) => {
         console.log(folderId);
         try {
@@ -296,7 +294,7 @@ const Workspace = () => {
                     <div className={style.formType}>
                         <p>This is a form</p>
                         <RiDeleteBin6Line className={style.formDeleteIcon}
- />
+                        />
                     </div>
                 </div>
             </div>
