@@ -7,9 +7,14 @@ require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const frontendOrigin = process.env.FRONTEND_ORIGIN;
 
-// Middleware
-app.use(cors());
+// Configure CORS with credentials support
+app.use(cors({
+    origin: frontendOrigin, 
+    credentials: true
+}));
+
 app.use(express.json()); // For parsing application/json
 
 app.use('/', userRoutes);
@@ -23,8 +28,3 @@ connectDB().then(() => {
 }).catch(err => {
     console.error("Database connection error:", err);
 });
-
-
-
-
-

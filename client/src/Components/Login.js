@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import style from '../styles/Login.module.css';
 import img from "../Assets/img.png";
 import elipse1 from '../Assets/Ellipse1.png';
@@ -7,8 +8,8 @@ import elipse2 from "../Assets/Ellipse2.png";
 import googleLogo from "../Assets/google.png";
 const apiUrl = process.env.REACT_APP_URL;
 
-
 const Login = () => {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errors, setErrors] = useState({});
@@ -44,6 +45,7 @@ const Login = () => {
             try {
                 const response = await fetch(`${apiUrl}/login`, {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -51,9 +53,12 @@ const Login = () => {
                 });
 
                 const data = await response.json();
+                console.log(data);
 
                 if (response.ok) {
                     console.log('Login successful:', data);
+                    navigate("/workspace");
+
                 } else {
                     console.error('Error logging in:', data);
                     setErrors({ server: data.message || 'An error occurred' });

@@ -5,9 +5,12 @@ import img from "../Assets/img.png";
 import elipse1 from '../Assets/Ellipse1.png';
 import elipse2 from "../Assets/Ellipse2.png";
 import googleLogo from "../Assets/google.png";
+import { useNavigate } from "react-router-dom";
 const apiUrl = process.env.REACT_APP_URL;
 
+
 const Signup = () => {
+    const navigate = useNavigate();
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -54,6 +57,7 @@ const Signup = () => {
             try {
                 const response = await fetch(`${apiUrl}/register`, {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
                         'Content-Type': 'application/json',
                     },
@@ -63,14 +67,12 @@ const Signup = () => {
                 const data = await response.json();
 
                 if (response.ok) {
-                    console.log('User registered successful:', data);
+                    navigate('/workspace')
                 } else {
-                    console.error('Error logging in:', data);
                     setErrors({ server: data.message || 'An error occurred' });
                 }
 
             } catch (error) {
-                console.error('Error connecting to the server:', error);
                 setErrors({ server: 'Unable to connect to the server. Please try again later.' });
             }
         }
