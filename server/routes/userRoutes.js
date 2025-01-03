@@ -247,7 +247,6 @@ router.post("/api/forms", async (req, res) => {
 // Login User
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
-
   try {
     const user = await User.findOne({ email });
     if (!user)
@@ -282,6 +281,7 @@ router.post("/logout", (req, res) => {
 
 router.post('/createFolder', async (req, res) => {
   const { workspaceId, name, parentFolderId } = req.body;
+  console.log(req.body.workspaceId)
 
 
   try {
@@ -312,7 +312,6 @@ router.post('/createFolder', async (req, res) => {
     });
 
     await newFolder.save();
-
     if (parentFolder) {
       parentFolder.childFolders.push(newFolder._id);
       await parentFolder.save();
@@ -331,14 +330,27 @@ router.post('/createFolder', async (req, res) => {
   }
 });
 
-router.delete('/deleteFolder/:folderId', async (req, res) => {
-  const { folderId } = req.params;
+const authenticateUser = (req, res, next) => {
+  const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized access" });
+  }
 
   try {
-    if (!folderId) {
-      return res.status(400).json({ message: "Folder ID is required" });
-    }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // Attach decoded user info to request object
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: "Invalid token" });
+  }
+};
 
+// Delete folder endpoint
+router.delete("/deleteFolder/:folderId", authenticateUser, async (req, res) => {
+  const { folderId } = req.params;
+  const userId = req.user.id;
+  try {
     const folder = await Folder.findById(folderId);
     if (!folder) {
       return res.status(404).json({ message: "Folder not found" });
@@ -349,51 +361,76 @@ router.delete('/deleteFolder/:folderId', async (req, res) => {
       return res.status(404).json({ message: "Workspace not found" });
     }
 
-    // Remove folder reference from its parent folder or workspace
-    if (folder.parentFolderId) {
-      const parentFolder = await Folder.findById(folder.parentFolderId);
-      if (parentFolder) {
-        parentFolder.childFolders = parentFolder.childFolders.filter(
-          (childId) => String(childId) !== String(folderId)
-        );
-        await parentFolder.save();
-      }
-    } else {
-      workspace.folders = workspace.folders.filter(
-        (workspaceFolderId) => String(workspaceFolderId) !== String(folderId)
-      );
-      await workspace.save();
+    const hasPermission =
+      workspace.owner.toString() === userId ||
+      workspace.permissions?.edit === true;
+
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Permission denied" });
     }
 
-    // Recursively delete all child folders
-    const deleteChildFolders = async (childFolders) => {
-      for (const childFolderId of childFolders) {
-        const childFolder = await Folder.findById(childFolderId);
-        if (childFolder) {
-          await deleteChildFolders(childFolder.childFolders); // Recursive call
-          await Folder.findByIdAndDelete(childFolderId);
+    // Delete folder and its child folders recursively
+    const deleteFolderRecursively = async (folderId) => {
+      const folder = await Folder.findById(folderId);
+      if (folder) {
+        // Delete child folders
+        for (const childId of folder.childFolders) {
+          await deleteFolderRecursively(childId);
         }
+        // Delete current folder
+        await Folder.findByIdAndDelete(folderId);
       }
     };
 
-    await deleteChildFolders(folder.childFolders);
+    await deleteFolderRecursively(folderId);
 
-    await Folder.findByIdAndDelete(folderId);
-
-    res.status(200).json({
-      message: "Folder and all its child folders deleted successfully",
-    });
+    res.status(200).json({ message: "Folder deleted successfully" });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: "An error occurred while deleting the folder",
-      error: error.message,
-    });
+    console.error("Error deleting folder:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
 
+router.post('/createForm', async (req, res) => {
+  const { workspaceId, folderId, title } = req.body;
 
+  try {
+    if (!workspaceId || !title) {
+      return res.status(400).json({ message: "Workspace ID and Form title are required" });
+    }
 
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      return res.status(404).json({ message: "Workspace not found" });
+    }
+
+    if (folderId) {
+      const folder = await Folder.findById(folderId);
+      if (!folder) {
+        return res.status(404).json({ message: "Folder not found" });
+      }
+      if (String(folder.workspaceId) !== String(workspaceId)) {
+        return res.status(400).json({ message: "Folder does not belong to the workspace" });
+      }
+    }
+
+    const newForm = new Form({
+      title,
+      workspaceId,
+      folderId: folderId || null,
+    });
+
+    await newForm.save();
+
+    res.status(201).json({
+      message: "Form created successfully",
+      form: newForm,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "An error occurred while creating the form", error: error.message });
+  }
+});
 
 module.exports = router;

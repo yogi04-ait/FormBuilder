@@ -291,6 +291,14 @@
   align-items: center;
   justify-content: center;
   gap: 15px;
+  position: relative;
+}
+.formDeleteIcon {
+  position: absolute;
+  top: -8px;
+  right: -7px;
+  font-size: 18px;
+  color: red;
 }
 
 .workspace {

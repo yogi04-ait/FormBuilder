@@ -29,6 +29,7 @@ const Workspace = () => {
     const [currentEnviro, setCurrentEnviro] = useState("");
     const [currentdir, setCurrentDir] = useState("");
     const [deleteFolderId, setDeleteFolderID] = useState('');
+    const [folderstruct, setfolderstruct] = useState(1);
 
     useEffect(() => {
         const fetchWorkspaces = async () => {
@@ -49,7 +50,9 @@ const Workspace = () => {
                         ...(data.sharedWorkspaces || []),
                     ];
                     setWorkspaces(allWorkspaces);
-                    setSelectedWorkspace(allWorkspaces?.ownedWorkspaces);
+                    setSelectedWorkspace(allWorkspaces[0]);
+                    console.log(allWorkspaces[0])
+
                     setCurrentDir(...data.ownedWorkspaces)
 
                 } else {
@@ -60,7 +63,7 @@ const Workspace = () => {
             }
         };
         fetchWorkspaces();
-    }, [navigate]);
+    }, [navigate, folderstruct]);
 
     const toggleDropdown = () => {
         setIsDropdownOpen(!isDropdownOpen);
@@ -121,14 +124,50 @@ const Workspace = () => {
             if (response.ok) {
                 const data = await response.json();
                 setFolderName("");
-                console.error("Error:", response.statusText);
+                console.error("Error:", data.statusText);
+                setfolderstruct(folderstruct + 1);
             } else {
                 alert("Failed to create folder")
-                console.error("Error:", response.statusText);
+                console.error("Error:", response);
             }
         } catch (error) {
             console.error(error);
             alert("An error occurred while creating the folder.");
+        }
+
+    };
+
+    const handleCreateForm = async () => {
+        setIsCreateModalOpen(false);
+        if (!formName.trim()) {
+            alert("Form name is required!");
+            return;
+        }
+        try {
+            const workspaceId = selectedWorkspace?._id;
+            const name = formName;
+            const parentFolderId = selectedFolder?._id;
+            const response = await fetch(`${apiUrl}/createForm`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ workspaceId, name, parentFolderId }),
+            })
+
+            if (response.ok) {
+                const data = await response.json();
+                setFormName("");
+                console.error("Error:", data.statusText);
+                setfolderstruct(folderstruct + 1);
+            } else {
+                alert("Failed to create form")
+                console.error("Error:", response);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("An error occurred while creating the form.");
         }
 
     };
@@ -139,7 +178,7 @@ const Workspace = () => {
     };
 
     const handleFormDone = () => {
-        console.log("Form name:", formName);
+        handleCreateForm();
         setIsFormModalOpen(false);
         setFormName("");
     };
@@ -149,15 +188,31 @@ const Workspace = () => {
         setSelectedFolder(null);
     };
 
-    const handleDeleteConfirm = () => {
+    // const deleteForm = async (formId) => {
+    //     console.log(folderId);
+    //     try {
+    //         const response = await fetch(`${apiUrl}/deleteFolder/${folderId}`, {
+    //             method: 'DELETE',
+    //             credentials: "include",
+    //         });
 
-        setIsDeleteModalOpen(false);
-        setSelectedFolder(null);
-    };
+    //         if (!response.ok) {
+    //             throw new Error(`HTTP error! status: ${response.status}`);
+    //         }
 
+    //         setfolderstruct(folderstruct + 1);
+    //         setIsDeleteModalOpen(false);
+
+
+    //     } catch (error) {
+    //         console.error("Error deleting folder:", error);
+    //     }
+    // };
+    
     const deleteFolder = async (folderId) => {
+        console.log(folderId);
         try {
-            const response = await fetch(`/api/deleteFolder/${folderId}`, {
+            const response = await fetch(`${apiUrl}/deleteFolder/${folderId}`, {
                 method: 'DELETE',
                 credentials: "include",
             });
@@ -166,7 +221,9 @@ const Workspace = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            alert("Folder deleted successfully");
+            setfolderstruct(folderstruct + 1);
+            setIsDeleteModalOpen(false);
+
 
         } catch (error) {
             console.error("Error deleting folder:", error);
@@ -218,7 +275,6 @@ const Workspace = () => {
                         Create a folder
                     </button>
                     {
-                        // console.log(currentdir)
                         currentdir?.folders.map(folder => {
                             return (<p key={folder?._id} >
                                 {folder.name}
@@ -237,7 +293,11 @@ const Workspace = () => {
                         <IoMdAdd className={style.icon} />
                         Create a typebot
                     </button>
-                    <p className={style.formType}>This is form</p>
+                    <div className={style.formType}>
+                        <p>This is a form</p>
+                        <RiDeleteBin6Line className={style.formDeleteIcon}
+ />
+                    </div>
                 </div>
             </div>
 
