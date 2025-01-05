@@ -20,6 +20,10 @@ const workspaceSchema = new mongoose.Schema(
             view: { type: Boolean, default: true },
             edit: { type: Boolean, default: false },
         },
+        forms: [{
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Form",
+            }],
     },
     { timestamps: true }
 );

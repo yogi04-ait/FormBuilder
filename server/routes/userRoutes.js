@@ -7,10 +7,7 @@ const cookieParser = require("cookie-parser");
 const Workspace = require("../models/Workspace");
 const Form = require("../models/Form");
 const Folder = require("../models/Folder");
-const getUserWorkspaces = require("../config/Workspace");
-const authMiddleware = require('../utils/authMiddleware')
 router.use(cookieParser());
-
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRATION = "1d";
 
@@ -36,7 +33,7 @@ router.post("/workspace", async (req, res) => {
     const userId = decoded.id;
 
     const ownedWorkspaces = await Workspace.find({ owner: userId })
-      .populate({
+      .populate([{
         path: "folders",
         select: "name childFolders forms", // Ensure childFolders is selected
         populate: {
@@ -47,7 +44,13 @@ router.post("/workspace", async (req, res) => {
             select: "name",
           },
         },
-      })
+      },
+      {
+        path: "forms",
+        select: "title workspaceId"
+      }
+      ]
+      )
       .lean();
 
 
@@ -281,7 +284,6 @@ router.post("/logout", (req, res) => {
 
 router.post('/createFolder', async (req, res) => {
   const { workspaceId, name, parentFolderId } = req.body;
-  console.log(req.body.workspaceId)
 
 
   try {
@@ -394,7 +396,6 @@ router.delete("/deleteFolder/:folderId", authenticateUser, async (req, res) => {
 
 router.post('/createForm', async (req, res) => {
   const { workspaceId, folderId, title } = req.body;
-
   try {
     if (!workspaceId || !title) {
       return res.status(400).json({ message: "Workspace ID and Form title are required" });
@@ -405,8 +406,10 @@ router.post('/createForm', async (req, res) => {
       return res.status(404).json({ message: "Workspace not found" });
     }
 
+    let folder = null
+
     if (folderId) {
-      const folder = await Folder.findById(folderId);
+      folder = await Folder.findById(folderId);
       if (!folder) {
         return res.status(404).json({ message: "Folder not found" });
       }
@@ -423,6 +426,14 @@ router.post('/createForm', async (req, res) => {
 
     await newForm.save();
 
+    if (folder) {
+      folder.childFolders.push(newForm._id);
+      await folder.save();
+    } else {
+      workspace.forms.push(newForm._id);
+      await workspace.save();
+    }
+
     res.status(201).json({
       message: "Form created successfully",
       form: newForm,
@@ -432,5 +443,91 @@ router.post('/createForm', async (req, res) => {
     res.status(500).json({ message: "An error occurred while creating the form", error: error.message });
   }
 });
+
+router.delete("/deleteForm/:formId", authenticateUser, async (req, res) => {
+  const { formId } = req.params;
+  const userId = req.user.id;
+
+  try {
+    // Find the form by ID
+    const form = await Form.findById(formId);
+    if (!form) {
+      return res.status(404).json({ message: "Form not found" });
+    }
+
+    // Check if the form is associated with a workspace
+    const workspace = await Workspace.findOne({ forms: formId });
+    if (!workspace) {
+      return res.status(404).json({ message: "Workspace not found" });
+    }
+
+    // Verify user permissions
+    const hasPermission =
+      workspace.owner.toString() === userId ||
+      workspace.permissions?.edit === true;
+
+    if (!hasPermission) {
+      return res.status(403).json({ message: "Permission denied" });
+    }
+
+    // Delete the form
+    await Form.findByIdAndDelete(formId);
+
+    // Remove the form reference from the workspace
+    await Workspace.findByIdAndUpdate(workspace._id, {
+      $pull: { forms: formId },
+    });
+
+    res.status(200).json({ message: "Form deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting form:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.post("/update-profile", async (req, res) => {
+  const { name, email, oldPassword, newPassword } = req.body;
+  console.log(req.body)
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  const decoded = jwt.verify(token, JWT_SECRET);
+  const userId = decoded.id;
+
+  try {
+    if (!name && !email && !newPassword) {
+      return res.status(400).json({ message: "At least one field is update is required" })
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" })
+    }
+    if (newPassword) {
+      if (!oldPassword) {
+        return res.status(400).json({ message: "Old password is required to update the password" })
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ message: "Old password is incorrect." })
+      }
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(newPassword, salt)
+    }
+
+    if (name) user.username = name;
+    if (email) user.email = email;
+
+    await user.save();
+
+    res.status(200).json({ message: "Profile updated successfully" })
+
+  } catch (error) {
+    res.status(500).json({ message: "An error occured while updating the profile" })
+  }
+})
 
 module.exports = router;

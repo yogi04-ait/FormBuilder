@@ -14,7 +14,6 @@ const apiUrl = process.env.REACT_APP_URL;
 const Workspace = () => {
     const navigate = useNavigate();
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isFormModalOpen, setIsFormModalOpen] = useState(false);
     const [folderName, setFolderName] = useState("");
     const [formName, setFormName] = useState("");
@@ -24,11 +23,14 @@ const Workspace = () => {
     const [workspaces, setWorkspaces] = useState([]);
     const [selectedWorkspace, setSelectedWorkspace] = useState("");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [folderDeleteModal, setFolderDeleteModal] = useState(false)
     const [iseditable, setIsEditaable] = useState(true);
     const [isdrop, setIsDrop] = useState(false);
     const [currentdir, setCurrentDir] = useState("");
     const [deleteFolderId, setDeleteFolderID] = useState('');
     const [folderstruct, setfolderstruct] = useState(1);
+    const [formDeleteModal, setFormDeleteModal] = useState(false);
+    const [deleteFormId, setDeleteFormId] = useState('')
 
     useEffect(() => {
         const fetchWorkspaces = async () => {
@@ -143,7 +145,7 @@ const Workspace = () => {
         }
         try {
             const workspaceId = selectedWorkspace?._id;
-            const name = formName;
+            const title = formName;
             const parentFolderId = selectedFolder?._id;
             const response = await fetch(`${apiUrl}/createForm`, {
                 method: 'POST',
@@ -151,13 +153,12 @@ const Workspace = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ workspaceId, name, parentFolderId }),
+                body: JSON.stringify({ workspaceId, parentFolderId, title }),
             })
 
             if (response.ok) {
                 const data = await response.json();
                 setFormName("");
-                console.error("Error:", data.statusText);
                 setfolderstruct(folderstruct + 1);
             } else {
                 alert("Failed to create form")
@@ -181,34 +182,29 @@ const Workspace = () => {
         setFormName("");
     };
 
-    const handleDeleteCancel = () => {
-        setIsDeleteModalOpen(false);
-        setSelectedFolder(null);
+  
+
+    const deleteForm = async (formId) => {
+        setFormDeleteModal(false);
+        try {
+            const response = await fetch(`${apiUrl}/deleteForm/${deleteFormId}`, {
+                method: 'DELETE',
+                credentials: "include",
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            setfolderstruct(folderstruct + 1);
+
+
+        } catch (error) {
+            console.error("Error deleting folder:", error);
+        }
     };
 
-    // const deleteForm = async (formId) => {
-    //     console.log(folderId);
-    //     try {
-    //         const response = await fetch(`${apiUrl}/deleteFolder/${folderId}`, {
-    //             method: 'DELETE',
-    //             credentials: "include",
-    //         });
-
-    //         if (!response.ok) {
-    //             throw new Error(`HTTP error! status: ${response.status}`);
-    //         }
-
-    //         setfolderstruct(folderstruct + 1);
-    //         setIsDeleteModalOpen(false);
-
-
-    //     } catch (error) {
-    //         console.error("Error deleting folder:", error);
-    //     }
-    // };
-
     const deleteFolder = async (folderId) => {
-        console.log(folderId);
         try {
             const response = await fetch(`${apiUrl}/deleteFolder/${folderId}`, {
                 method: 'DELETE',
@@ -220,7 +216,7 @@ const Workspace = () => {
             }
 
             setfolderstruct(folderstruct + 1);
-            setIsDeleteModalOpen(false);
+            setFolderDeleteModal(false);
 
 
         } catch (error) {
@@ -279,7 +275,7 @@ const Workspace = () => {
                                 <RiDeleteBin6Line width="20px"
                                     className={style.deletefolder}
                                     onClick={() => {
-                                        setIsDeleteModalOpen(true);
+                                        setFolderDeleteModal(true);
                                         setDeleteFolderID(folder?._id);
                                     }} />
                             </p>)
@@ -291,11 +287,18 @@ const Workspace = () => {
                         <IoMdAdd className={style.icon} />
                         Create a typebot
                     </button>
-                    <div className={style.formType}>
-                        <p>This is a form</p>
-                        <RiDeleteBin6Line className={style.formDeleteIcon}
-                        />
-                    </div>
+                    {
+                        currentdir.forms.map(form => {
+                            return <div className={style.formType}>
+                                <p>{form.title}</p>
+                                <RiDeleteBin6Line className={style.formDeleteIcon} onClick={() => {
+                                    setFormDeleteModal(true);
+                                    setDeleteFormId(form?._id);
+                                }}
+                                />
+                            </div>
+                        })
+                    }
                 </div>
             </div>
 
@@ -348,7 +351,7 @@ const Workspace = () => {
                 </div>
             )}
 
-            {isDeleteModalOpen && (
+            {folderDeleteModal && (
                 <div className={style.modal}>
                     <div className={style.modalContent}>
                         <h2>Are you sure you want to delete this folder?</h2>
@@ -356,7 +359,23 @@ const Workspace = () => {
                             <button className={style.doneButton} onClick={() => deleteFolder(deleteFolderId)}>
                                 Confirm
                             </button>
-                            <button className={style.cancelButton} onClick={handleDeleteCancel}>
+                            <button className={style.cancelButton} onClick={() => setFolderDeleteModal(false)}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {formDeleteModal && (
+                <div className={style.modal}>
+                    <div className={style.modalContent}>
+                        <h2>Are you sure you want to delete this form?</h2>
+                        <div className={style.modalActions}>
+                            <button className={style.doneButton} onClick={() => (deleteForm(deleteFormId))}>
+                                Confirm
+                            </button>
+                            <button className={style.cancelButton} onClick={() => setFormDeleteModal(false)} >
                                 Cancel
                             </button>
                         </div>

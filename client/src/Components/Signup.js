@@ -6,6 +6,7 @@ import elipse1 from '../Assets/Ellipse1.png';
 import elipse2 from "../Assets/Ellipse2.png";
 import googleLogo from "../Assets/google.png";
 import { useNavigate } from "react-router-dom";
+import { validateEmail, validatePassword } from '../utils/Validation';
 const apiUrl = process.env.REACT_APP_URL;
 
 
@@ -17,15 +18,6 @@ const Signup = () => {
     const [confirmpassword, setConfirmPassword] = useState('');
     const [errors, setErrors] = useState({});
 
-    const validateEmail = (email) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
-    };
-
-    const validatePassword = (password) => {
-        const passwordRegex = /^(?=.*[!@#$%^&*(),.?":{}|<>])[A-Za-z\d!@#$%^&*(),.?":{}|<>]{8,}$/;
-        return passwordRegex.test(password);
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -65,7 +57,6 @@ const Signup = () => {
                 });
 
                 const data = await response.json();
-
                 if (response.ok) {
                     navigate('/workspace')
                 } else {
@@ -80,6 +71,7 @@ const Signup = () => {
 
     return (
         <div className={style.main}>
+            
             <form onSubmit={handleSubmit} className={style.form}>
                 <div className={style.div}>
                     <label className={errors.username ? style.errorLabel : ''}>Username</label>
