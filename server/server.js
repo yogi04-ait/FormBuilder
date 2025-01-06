@@ -9,10 +9,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const frontendOrigin = process.env.FRONTEND_ORIGIN;
 
-// Configure CORS with credentials support
 app.use(cors({
-    origin: frontendOrigin, 
-    credentials: true
+    origin: frontendOrigin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+
 }));
 
 app.use(express.json()); // For parsing application/json

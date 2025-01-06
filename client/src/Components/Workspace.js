@@ -9,6 +9,8 @@ import { MdOutlineKeyboardArrowUp } from "react-icons/md";
 import handleLogout from "../utils/handleLogout";
 import { RiDeleteBin6Line } from "react-icons/ri";
 import { IoClose } from "react-icons/io5";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const apiUrl = process.env.REACT_APP_URL;
 
 const Workspace = () => {
@@ -24,7 +26,7 @@ const Workspace = () => {
     const [selectedWorkspace, setSelectedWorkspace] = useState("");
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [folderDeleteModal, setFolderDeleteModal] = useState(false)
-    const [iseditable, setIsEditaable] = useState(true);
+    const [iseditable, setIsEditable] = useState(true);
     const [isdrop, setIsDrop] = useState(false);
     const [currentdir, setCurrentDir] = useState("");
     const [deleteFolderId, setDeleteFolderID] = useState('');
@@ -84,16 +86,16 @@ const Workspace = () => {
         navigate("/settings");
     };
 
+    const notifySuccess = (message) => toast.success(message);
+    const notifyError = (message) => toast.error(message);
+
+
+
     const handleEmailInvite = () => {
         setEmail("");
         alert(`Invitation sent to ${email}`);
     };
 
-    const handleCopyLink = () => {
-        const link = `${window.location.origin}/workspace/${selectedWorkspace.id || "default"}`;
-        navigator.clipboard.writeText(link);
-        alert("Link copied to clipboard!");
-    };
 
 
     const handleCreateCancel = () => {
@@ -126,8 +128,8 @@ const Workspace = () => {
                 setFolderName("");
                 console.error("Error:", data.statusText);
                 setfolderstruct(folderstruct + 1);
+                notifySuccess("Folder created successfully");
             } else {
-                alert("Failed to create folder")
                 console.error("Error:", response);
             }
         } catch (error) {
@@ -160,6 +162,7 @@ const Workspace = () => {
                 const data = await response.json();
                 setFormName("");
                 setfolderstruct(folderstruct + 1);
+                notifySuccess("Form created successfully");
             } else {
                 alert("Failed to create form")
                 console.error("Error:", response);
@@ -170,6 +173,52 @@ const Workspace = () => {
         }
 
     };
+
+    const emailInvite = async()=>{
+        try {
+            const mode = iseditable ? "edit" : "view";
+            const response = await fetch(`${apiUrl}/workspace/emailIvite/`,{
+                method:"POST",
+                headers:{
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({mode:mode
+                })
+
+
+            })
+        } catch (error) {
+            
+        }
+
+    }
+
+
+    const inviteLink = async () => {
+        const workspaceId = selectedWorkspace?._id;
+        try {
+            const mode = iseditable ? "edit" : "view";
+            const response = await fetch(`${apiUrl}/workspace/share-link/${workspaceId}`, {
+                method: "Post",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    mode:mode
+                }),
+
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to generate link");
+            }
+
+            const { link } = await response.json();
+            await navigator.clipboard.writeText(link);
+        } catch (error) {
+            
+        }
+    }
 
     const handleFormCancel = () => {
         setIsFormModalOpen(false);
@@ -182,7 +231,7 @@ const Workspace = () => {
         setFormName("");
     };
 
-  
+
 
     const deleteForm = async (formId) => {
         setFormDeleteModal(false);
@@ -228,6 +277,7 @@ const Workspace = () => {
 
     return (
         <div>
+            <ToastContainer />
             <div className={style.header}>
                 <div className={style.workspace}>
                     <div className={style.default} onClick={toggleDropdown}><p>{workspaces[0]?.name}</p>
@@ -311,18 +361,18 @@ const Workspace = () => {
                             <div className={style.perm} >
                                 <div onClick={() => setIsDrop(!isdrop)}  >{iseditable ? "Edit" : "View"} <MdOutlineKeyboardArrowDown /></div>
                                 {isdrop && (<div className={style.viewEdit}>
-                                    <button onClick={() => setIsEditaable(true)}>Edit</button>
+                                    <button onClick={() => setIsEditable(true)}>Edit</button>
                                     <div className={style.divider}></div >
-                                    <button onClick={() => setIsEditaable(false)}>View</button>
+                                    <button onClick={() => setIsEditable(false)}>View</button>
                                 </div>)
                                 }
                             </div>
 
                         </div>
                         <input placeholder="Enter email id" />
-                        <button>Send Invite</button>
+                        <button onClick={emailInvite}>Send Invite</button>
                         <p className={style.linkInvite}>Invite by link</p>
-                        <button>Copy link</button>
+                        <button onClick={inviteLink} >Copy link</button>
                     </div>
                 </div>
             )}

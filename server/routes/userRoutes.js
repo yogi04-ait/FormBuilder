@@ -10,6 +10,9 @@ const Folder = require("../models/Folder");
 router.use(cookieParser());
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRATION = "1d";
+const crypto = require("crypto");
+require('dotenv').config();
+
 
 // Generate JWT Token
 const generateToken = (user) => {
@@ -17,6 +20,36 @@ const generateToken = (user) => {
     expiresIn: JWT_EXPIRATION,
   });
 };
+
+router.post("/workspace/share-link/:id", async (req, res) => {
+  const { mode } = req.body;
+  const { id: workspaceId } = req.params;
+
+  try {
+    const workspace = await Workspace.findById(workspaceId);
+
+    if (!workspace) {
+      return res.status(404).json({ message: "Workspace not found" });
+    }
+
+    if (req.user.id !== workspace.owner.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    workspace.sharedLink = { mode, token };
+    await workspace.save();
+
+    res.status(200).json({
+      message: "Shareable link generated successfully",
+      link: `${process.env.APP_BASE_URL}/workspace/join/${token}`,
+      mode,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to generate link", error: error.message });
+  }
+});
 
 
 
